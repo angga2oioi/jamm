@@ -63,7 +63,10 @@ function model(schema,dbconfig,presetData,callback){
 		}
 		db.isColumnExists(dbconfig,schema.name,schema.column[index].name,function(Exists){			
 			if (!Exists){
-				var query = "ALTER TABLE "+schema.name+" ADD "+schema.column[index].name+" "+ schema.column[index].type +" "+schema.column[index].ext;
+				var query = "ALTER TABLE "+schema.name+" ADD "+schema.column[index].name+" "+ schema.column[index].type ;
+				if(schema.column[index].ext &&schema.column[index].ext !=""){
+					query+=" "+schema.column[index].ext;
+				}
 				ModelQuery({string:query,escape:false},function(result){
 					checkColumn(index+1);
 				});
@@ -73,7 +76,10 @@ function model(schema,dbconfig,presetData,callback){
 					if(typeof result.recordset[0].data_type =='string' && result.recordset[0].data_type.toLowerCase()==schema.column[index].type.toLowerCase()){
 						checkColumn(index+1);						
 					}else{
-						var query = "ALTER TABLE "+schema.name+" MODIFY COLUMN "+schema.column[index].name+" "+ schema.column[index].type +" "+schema.column[index].ext;
+						var query = "ALTER TABLE "+schema.name+" MODIFY COLUMN "+schema.column[index].name+" "+ schema.column[index].type;
+						if(schema.column[index].ext &&schema.column[index].ext !=""){
+							query+=" "+schema.column[index].ext;
+						}
 						ModelQuery({string:query,escape:false},function(result){
 							checkColumn(index+1);
 						});
