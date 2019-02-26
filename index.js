@@ -33,6 +33,12 @@ function model(schema,dbconfig,presetData,callback){
 					if(schema.column[i].index===true){
 						query +=",INDEX "+schema.name+"_index_"+schema.column[i].name+" ("+schema.column[i].name+")";
 					}
+					if(typeof schema.column[i].foreign==="object"){
+						query +=",FOREIGN KEY ("+schema.column[i].name+") REFERENCES "+schema.column[i].foreign.table + "(`"+schema.column[i].foreign.column+"`) ";
+						if(typeof schema.column[i].foreign.ext==="string"){
+							query+=schema.column[i].foreign.ext;
+						}
+					}
 				}
 				query +=")";
 				if(schema.engine && typeof schema.engine=="string"){
@@ -113,12 +119,18 @@ function model(schema,dbconfig,presetData,callback){
 			}else{
 				var INDEX_PART;
 				if(schema.column[index].index===true){
-					INDEX_PART =" ADD INDEX `"+schema.name+"_index_"+schema.column[index].name+"`";
+					INDEX_PART =" ADD INDEX `"+schema.name+"_index_"+schema.column[index].name+"`" + " (`"+schema.column[index].name+"`)";
 				}
 				if(schema.column[index].primary===true){
-					INDEX_PART =" ADD PRIMARY KEY ";
+					INDEX_PART =" ADD PRIMARY KEY " + " (`"+schema.column[index].name+"`)";
 				}
-				var query = "ALTER TABLE `"+schema.name+"` "+INDEX_PART+" (`"+schema.column[index].name+"`);";
+				if(typeof schema.column[i].foreign==="object"){
+					INDEX_PART +=" ADD FOREIGN KEY ("+schema.column[i].name+") REFERENCES "+schema.column[i].foreign.table + "(`"+schema.column[i].foreign.column+"`) ";
+					if(typeof schema.column[i].foreign.ext==="string"){
+						INDEX_PART+=schema.column[i].foreign.ext;
+					}
+				}
+				var query = "ALTER TABLE `"+schema.name+"` "+INDEX_PART+";";
 				ModelQuery({string:query,escape:false},function(result){
 					checkIndexed(index+1);
 					return;	
