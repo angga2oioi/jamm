@@ -289,7 +289,6 @@ function model(schema,dbconfig,presetData,callback){
 		for (var attrname in data) { 
 			insertquery += '`'+attrname+'`,';
 			insertquery2 += "?,";
-			query+= attrname +"=? AND ";
 			escape.push(data[attrname]);				
 		}
 		insertquery = insertquery.slice(0, - 1) + ")";
