@@ -145,12 +145,13 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
-		var query ;	
-		if (!condition.string){
-			query = "SELECT * FROM "+schema.name;	
-		}else{
-			query = "SELECT * FROM "+schema.name+" WHERE "+condition.string;	
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
 		}
+
+		condition.string = condition.string || "1";
+		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string ;	
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result.recordset);}
 		});		
@@ -162,8 +163,13 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
-		condition.top=1;
-		query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.top ;
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
+		}
+
+		condition.string = condition.string || "1";
+		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT 1";
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if(result.error || !result.recordset || result.recordset.length<1){
 				if (callback && typeof(callback) == "function"){callback(false);}
@@ -179,14 +185,36 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
-		var query ;	
-		if (!condition.string){
-			query = "SELECT * FROM "+schema.name+" LIMIT "+condition.top; 
-		}else{
-			query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.top ;
-		}	
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
+		}
+		
+		condition.string = condition.string || "1";
+		condition.top = condition.top || 1;
+		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.top ;
 		ModelQuery({string:query,escape:condition.escape},function(result){
-			if (callback && typeof(callback) == "function"){callback(result);}
+			if (callback && typeof(callback) == "function"){callback(result.recordset);}
+		});		
+	}
+	function FindPage(condition,callback){	
+		if(!finished){
+			setTimeout(function(){
+				FindTop(condition,callback)
+			},500)
+			return;
+		}
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
+		}
+		condition.string = condition.string || "1";
+		condition.page = condition.page || "0" ;
+		condition.max = condition.max || "10" ;
+
+		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.page+","+condition.max ;
+		ModelQuery({string:query,escape:condition.escape},function(result){
+			if (callback && typeof(callback) == "function"){callback(result.recordset);}
 		});		
 	}
 	function Delete(condition,callback){			
@@ -196,12 +224,13 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
-		var query ;	
-		if (!condition.string){
-			query = "DELETE FROM "+schema.name;	
-		}else{
-			query = "DELETE FROM "+schema.name+" WHERE "+condition.string ;	
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
 		}
+		condition.string = condition.string || "1";
+		var query = "DELETE FROM "+schema.name+" WHERE "+condition.string ;	
+
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});		
@@ -213,12 +242,13 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
-		var query;
-		if (!condition.top){
-			query = "DELETE FROM "+schema.name+" LIMIT 1";
-		}else{
-			query = "DELETE FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.top ;	
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
 		}
+		condition.string = condition.string || "1";
+		condition.top = condition.top || 1 ;
+		var query = "DELETE FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.top ;
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});		
@@ -230,8 +260,14 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
+		}
+
 		var query;
-		query = "SELECT COUNT(*) AS CNT FROM "+schema.name+" WHERE "+condition.string;	
+		condition.string = condition.string || "1";
+		query = "SELECT IFNULL(COUNT(*),0) AS CNT FROM "+schema.name+" WHERE "+condition.string;	
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (result.err){
 				if (callback && typeof(callback) == "function"){callback(0);}	
@@ -247,6 +283,10 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
+		if(!condition || !condition.string){
+			callback({error:"option.string is not set"});
+			return;
+		}
 		var query = "UPDATE "+schema.name+" SET "+condition.string;	
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
@@ -259,6 +299,10 @@ function model(schema,dbconfig,presetData,callback){
 			},500)
 			return;
 		}
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
+		}
 		var updatequery = '';
 		var escapequery = [];
 		for (var attrname in data){
@@ -269,6 +313,8 @@ function model(schema,dbconfig,presetData,callback){
 		for(i=0;i<condition.escape.length;i++){
 			escapequery.push(condition.escape[i]);
 		}
+
+		condition.string = condition.string || "1";
 		var query = "UPDATE " + schema.name + " SET " + updatequery + " WHERE " + condition.string;
 		ModelQuery({string:query,escape:escapequery},function(result){
 			if(callback && typeof callback=='function'){
@@ -463,6 +509,8 @@ function model(schema,dbconfig,presetData,callback){
 		DBConfig:dbconfig,
 		Find:Find,
 		FindOne:FindOne,
+		FindTop:FindTop,
+		FindPage:FindPage,
 		Delete:Delete,
 		DeleteTop:DeleteTop,
 		Update:Update,
