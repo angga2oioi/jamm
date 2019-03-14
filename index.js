@@ -124,7 +124,7 @@ function model(schema,dbconfig,presetData,callback){
 				if(schema.column[index].primary===true){
 					INDEX_PART =" ADD PRIMARY KEY " + " (`"+schema.column[index].name+"`)";
 				}
-				if(typeof schema.column[i].foreign==="object"){
+				if(typeof schema.column[index].foreign==="object"){
 					INDEX_PART +=" ADD FOREIGN KEY ("+schema.column[i].name+") REFERENCES "+schema.column[i].foreign.table + "(`"+schema.column[i].foreign.column+"`) ";
 					if(typeof schema.column[i].foreign.ext==="string"){
 						INDEX_PART+=schema.column[i].foreign.ext;

@@ -112,6 +112,7 @@ const table ={
 - ```table.column.foreign```:[object][optional],Determines if column **FOREIGN KEY**
 - ```table.column.foreign.table``` :[string][required], the table for **FOREIGN KEY**
 - ```table.column.foreign.column```:[string][required],the column for **FOREIGN KEY**.
+- ```table.column.foreign.ext```:[string][optional],the extended option for **FOREIGN KEY**.
 
 ## Performing queries
 Once created, here's the available method for the authorModel from above example as a shortcut to execute a query.
