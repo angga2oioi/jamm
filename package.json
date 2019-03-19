@@ -10,6 +10,10 @@
     "mysql"
   ],
   "author": "angga2oioi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angga2oioi/jamm"
+  },
   "license": "ISC",
   "dependencies": {
     "mysql": "^2.16.0"

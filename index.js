@@ -142,7 +142,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				Find(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -160,7 +160,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				FindOne(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -182,7 +182,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				FindTop(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -201,7 +201,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				FindTop(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -221,7 +221,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				Delete(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -239,7 +239,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				DeleteTop(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -257,7 +257,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				Count(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -280,7 +280,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				Update(condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(!condition || !condition.string){
@@ -296,7 +296,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				UpdateX(data,condition,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(typeof condition==="function"){
@@ -326,7 +326,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				Insert(data,callback)
-			},500)
+			},100)
 			return;
 		}
 		var insertquery="(";
@@ -348,7 +348,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				InsertIgnore(data,callback)
-			},500)
+			},100)
 			return;
 		}
 		var insertquery="(";
@@ -371,7 +371,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				InsertDuplicate(data,dup,callback)
-			},500)
+			},100)
 			return;
 		}
 	    var insertquery="(";
@@ -402,7 +402,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				InsertMultiple(data,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(data.length ==0){
@@ -437,7 +437,7 @@ function model(schema,dbconfig,presetData,callback){
 		if(!finished){
 			setTimeout(function(){
 				InsertMultipleWithDuplicate(data,dup,callback)
-			},500)
+			},100)
 			return;
 		}
 		if(data.length ==0){
