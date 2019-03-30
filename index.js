@@ -89,7 +89,6 @@ function model(schema,dbconfig,presetData,callback){
 						ModelQuery({string:query,escape:false},function(result){
 							checkColumn(index+1);
 						});
-
 					}
 				});				
 			}
@@ -305,11 +304,13 @@ function model(schema,dbconfig,presetData,callback){
 		}
 		var updatequery = '';
 		var escapequery = [];
+		var temp = [];
 		for (var attrname in data){
-			updatequery += attrname +'=?,';
+			temp.push(attrname +'=?');
 			escapequery.push(data[attrname]);
 		}
-		updatequery = updatequery.slice(0,-1);
+		updatequery = temp.join(",");
+		
 		for(i=0;i<condition.escape.length;i++){
 			escapequery.push(condition.escape[i]);
 		}
@@ -329,16 +330,14 @@ function model(schema,dbconfig,presetData,callback){
 			},100)
 			return;
 		}
-		var insertquery="(";
-		var insertquery2="(";
-		var escape =[];
-		for (var attrname in data) { 
-			insertquery += '`'+attrname+'`,';
-			insertquery2 += "?,";
-			escape.push(data[attrname]);				
+		var insertquery="(" +Object.keys(data).join(",") + ")";
+		var temp = [];
+		for(i=0;i<Object.keys(data).length;i++){
+			temp.push("?")
 		}
-		insertquery = insertquery.slice(0, - 1) + ")";
-		insertquery2 = insertquery2.slice(0, - 1) + ")";
+		var insertquery2="(" + temp.join(",") + ")";
+		var escape =Object.values(data);
+
 		var query = "INSERT INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2;	
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
@@ -351,17 +350,15 @@ function model(schema,dbconfig,presetData,callback){
 			},100)
 			return;
 		}
-		var insertquery="(";
-		var insertquery2="(";
-		var escape =[];
-		for (var attrname in data) { 
-			insertquery += '`'+attrname+'`,';
-			insertquery2 += "?,";
-			query+= attrname +"=? AND ";
-			escape.push(data[attrname]);				
+
+		var insertquery="(" +Object.keys(data).join(",") + ")";
+		var temp = [];
+		for(i=0;i<Object.keys(data).length;i++){
+			temp.push("?")
 		}
-		insertquery = insertquery.slice(0, - 1) + ")";
-		insertquery2 = insertquery2.slice(0, - 1) + ")";
+		var insertquery2="(" + temp.join(",") + ")";
+		var escape =Object.values(data);
+	
 		var query = "INSERT IGNORE INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2;
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
@@ -374,23 +371,20 @@ function model(schema,dbconfig,presetData,callback){
 			},100)
 			return;
 		}
-	    var insertquery="(";
-		var insertquery2="(";
-		var escape =[];
-		for (var attrname in data) { 
-			insertquery += '`'+attrname+'`,';
-			insertquery2 += "?,";
-			query+= attrname +"=? AND ";
-			escape.push(data[attrname]);				
+	    var insertquery="(" +Object.keys(data).join(",") + ")";
+		var temp = [];
+		for(i=0;i<Object.keys(data).length;i++){
+			temp.push("?")
 		}
-		insertquery = insertquery.slice(0, - 1) + ")";
-		insertquery2 = insertquery2.slice(0, - 1) + ")";
+		var insertquery2="(" + temp.join(",") + ")";
+		var escape =Object.values(data);
 		
 		var insertDuplicate = ' ON DUPLICATE KEY UPDATE ';
+		temp = [];
 		for (i=0;i<dup.length;i++){
-			insertDuplicate += dup[i] + '= VALUES (' + dup[i] + '),';
+			temp.push(dup[i] + ' = VALUES (' + dup[i] + ')');
 		}
-		insertDuplicate = insertDuplicate.slice(0, - 1) + ';';
+		insertDuplicate += temp.join(",") +';';
 		
 		var query = "INSERT INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2 + insertDuplicate;	
 		
@@ -410,25 +404,20 @@ function model(schema,dbconfig,presetData,callback){
 			return
 		}
 		
-		var insertquery="(";
-		var escape =[];
-		for (var attrname in data[0]) { 
-			insertquery += '`'+attrname+'`,';
-		}		
-		insertquery = insertquery.slice(0, - 1) + ")";
-		
-		var insertquery2="";
-		for(i=0;i<data.length;i++){
-			insertquery2+="(";
-			for (var attrname in data[i]) { 
-				insertquery2 += "?,";
-				escape.push(data[i][attrname]);
-			}
-			insertquery2 = insertquery2.slice(0, - 1) + "),";
+		var insertquery="(" +Object.keys(data[0]).join(",") + ")";
+		var temp = [];
+		for(i=0;i<Object.keys(data[0]).length;i++){
+			temp.push("?")
 		}
-		insertquery2 = insertquery2.slice(0, - 1) + ";";
+		var escape =[];
 		
-		var query = "INSERT IGNORE INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2;
+		var insertquery2=[];
+		for(i=0;i<data.length;i++){
+			insertquery2.push("(" + temp.join(",") + ")");
+			escape.push(...Object.values(data[i]))
+		}
+		
+		var query = "INSERT IGNORE INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2.join(",");
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});
@@ -445,29 +434,27 @@ function model(schema,dbconfig,presetData,callback){
 			return
 		}
 		
-		var insertquery="(";
+		var insertquery="(" +Object.keys(data[0]).join(",") + ")";
+		var temp = [];
+		for(i=0;i<Object.keys(data[0]).length;i++){
+			temp.push("?")
+		}
 		var escape =[];
-		for (var attrname in data[0]) { 
-			insertquery += '`'+attrname+'`,';
-		}		
-		insertquery = insertquery.slice(0, - 1) + ")";
 		
-		var insertquery2="";
+		var insertquery2=[];
 		for(i=0;i<data.length;i++){
-			insertquery2+="(";
-			for (var attrname in data[i]) { 
-				insertquery2 += "?,";
-				escape.push(data[i][attrname]);
-			}
-			insertquery2 = insertquery2.slice(0, - 1) + "),";
+			insertquery2.push("(" + temp.join(",") + ")");
+			escape.push(...Object.values(data[i]))
 		}
-		insertquery2 = insertquery2.slice(0, - 1);
+
 		var insertDuplicate = ' ON DUPLICATE KEY UPDATE ';
+		temp = [];
 		for (i=0;i<dup.length;i++){
-			insertDuplicate += dup[i] + '= VALUES (' + dup[i] + '),';
+			temp.push(dup[i] + ' = VALUES (' + dup[i] + ')');
 		}
-		insertDuplicate = insertDuplicate.slice(0, - 1) + ';';
-		var query = "INSERT INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2 + insertDuplicate;
+		insertDuplicate += temp.join(",") +';';
+
+		var query = "INSERT INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2.join(",") + insertDuplicate;
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});
