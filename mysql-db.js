@@ -24,16 +24,20 @@ function getPool(dbconfig){
 }
 module.exports.query=function(dbconfig,query,callback){		
 	var sel_pool = getPool(dbconfig);
+	var db = this;
 	if(!sel_pool){
-		var db = this;
 		setTimeout(function(){
 			db.query(dbconfig,query,callback);
-		},10);
+		},1);
 		return;
 	}
 	sel_pool.connection.getConnection(function(err, connection) {
 		if(err){
 			console.log("mysql-db.js line 37",err);
+			setTimeout(function(){
+				db.query(dbconfig,query,callback);
+			},1);
+			return;
 		}
 		connection.query(query.string,query.escape, function(err, recordset){
 			connection.release();
