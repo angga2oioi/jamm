@@ -333,7 +333,7 @@ is the same as executing query like this
 INSERT INTO tbl_author SET (id,name,email) VALUES ('newId','new Author','newauthor@gmail.com'),('newerId','newer Author','newerauthor@gmail.com')
 ```
 
-### InsertMultipleWithDuplicate(object,callback)
+### InsertMultipleWithDuplicate(object,array,callback)
 Perform ```INSERT INTO``` query for the selected table for multiple data record  with ```ON DUPLICATE KEY UPDATE``` appended at the end of query, performing 
 ```
 let newAuthorList=[
@@ -348,7 +348,7 @@ let newAuthorList=[
 	    email:"newerauthor@gmail.com"
     }
 ]
-authorModel.InsertMultipleWithDuplicate(newAuthorList,(result)=>{
+authorModel.InsertMultipleWithDuplicate(newAuthorList,["name","email"],(result)=>{
     //result.error will be an Error if one occurred during the query
 })
 ```
