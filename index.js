@@ -46,8 +46,9 @@ function model(schema,dbconfig,presetData,callback){
 				}
 				ModelQuery({string:query},function(result){
 					if (result.err){
-						console.log(result.err);
-						process.exit(1);
+						setTimeout(function(){
+							checkTable(schema);
+						},1000)
 						return;
 					}
 					finished = true;
