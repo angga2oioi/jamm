@@ -84,15 +84,15 @@ function model(schema,dbconfig,presetData,callback){
 					query +=` AFTER ${schema.column[index-1].name}`;
 				}
 				if(schema.column[index].index===true){
-					temp+=`, ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name})`;
+					query+=`, ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name})`;
 				}else if(schema.column[index].primary===true){
-					temp+=`, ADD CONSTRAINT ${schema.name}_primary_${n.name} PRIMARY KEY (${schema.column[index].name})`;
+					query+=`, ADD CONSTRAINT ${schema.name}_primary_${n.name} PRIMARY KEY (${schema.column[index].name})`;
 				}else if(schema.column[index].unique){
-					temp+=`, ADD CONSTRAINT ${schema.name}_unique_${n.name} UNIQUE(${schema.column[index].unique.join(",")})`;
+					query+=`, ADD CONSTRAINT ${schema.name}_unique_${n.name} UNIQUE(${schema.column[index].unique.join(",")})`;
 				}else if(schema.column[index].foreign){
-					temp+=`, ADD CONSTRAINT ${schema.name}_foreign_${n.name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column})`;
+					query+=`, ADD CONSTRAINT ${schema.name}_foreign_${n.name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column})`;
 					if(typeof schema.column[index].foreign.ext =="string"){
-						temp +=` ${schema.column[index].foreign.ext}`;
+						query +=` ${schema.column[index].foreign.ext}`;
 					}
 				}
 				ModelQuery({string:query,escape:false},function(result){
