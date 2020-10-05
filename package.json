@@ -1,6 +1,6 @@
 {
   "name": "jamm",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Just Another Mysql Modeller",
   "main": "index.js",
   "scripts": {
