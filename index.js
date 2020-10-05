@@ -15,32 +15,34 @@ function model(schema,dbconfig,presetData,callback){
 	function checkTable(schema){
 		db.isTableExists(dbconfig,schema.name,function(Exists){
 			if (!Exists){
-				var query = "CREATE TABLE "+schema.name+" (";
-				for (i=0;i<schema.column.length;i++){
-					query += schema.column[i].name +" "+ schema.column[i].type;
-					if(schema.column[i].ext &&schema.column[i].ext !=""){
-						query +=" "+ schema.column[i].ext;
+				var columns = [];
+				schema.column.forEach((n)=>{
+					var temp=`${n.name} ${n.type}`;
+					if(n.len && n.len >0){
+						temp +=` (${n.len}) `;
 					}
-					if (i<schema.column.length-1){
-						query +=",";
+					if(n.ext && n.ext!=""){
+						temp +=` ${n.ext}`;
 					}
+					
+					columns.push(temp);
+				})
+				var indexes=[];
+				schema.column.forEach((n)=>{
+					var temp="";
+					if(n.index===true){
+						indexes.push(`INDEX ${schema.name}_index_${n.name} (${n.name})`);
+					}else if(n.primary===true){
+						indexes.push(`CONSTRAINT ${schema.name}_primary_${n.name} PRIMARY KEY (${n.name})`);
+					}else if(n.unique){
+						indexes.push(`CONSTRAINT ${schema.name}_unique_${n.name} UNIQUE(${n.unique.join(",")})`);
+					}
+				})
+				var query=`CREATE TABLE ${schema.name} (${columns.join(",")} `;
+				if(indexes.length >0){
+					query +=`, ${indexes.join(",")}`;
 				}
-				
-				for (i=0;i<schema.column.length;i++){
-					if(schema.column[i].primary===true){
-						query +=",PRIMARY KEY ("+schema.column[i].name+")"
-					}
-					if(schema.column[i].index===true){
-						query +=",INDEX "+schema.name+"_index_"+schema.column[i].name+" ("+schema.column[i].name+")";
-					}
-					if(typeof schema.column[i].foreign==="object"){
-						query +=",FOREIGN KEY ("+schema.column[i].name+") REFERENCES "+schema.column[i].foreign.table + "(`"+schema.column[i].foreign.column+"`) ";
-						if(typeof schema.column[i].foreign.ext==="string"){
-							query+=schema.column[i].foreign.ext;
-						}
-					}
-				}
-				query +=")";
+				query +=`)`;
 				if(schema.engine && typeof schema.engine=="string"){
 				    query +="ENGINE="+schema.engine;
 				}
@@ -65,38 +67,68 @@ function model(schema,dbconfig,presetData,callback){
 	}
 	function checkColumn(index){
 		if (index == schema.column.length){
+			
 			checkIndexed(0);
 			return;
 		}
 		db.isColumnExists(dbconfig,schema.name,schema.column[index].name,function(Exists){			
 			if (!Exists){
-				var query = "ALTER TABLE "+schema.name+" ADD "+schema.column[index].name+" "+ schema.column[index].type ;
+				var query=`ALTER TABLE ${schema.name} ADD ${schema.column[index].name} ${schema.column[index].type}`;
+				if(schema.column[index].len &&schema.column[index].len >0){
+					query+=`(${schema.column[index].len})`;
+				}
 				if(schema.column[index].ext &&schema.column[index].ext !=""){
-					query+=" "+schema.column[index].ext;
+					query+=` ${schema.column[index].ext}`; 
+				}
+				if(schema.column[index].index===true){
+					temp+=`, ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name})`;
+				}else if(schema.column[index].primary===true){
+					temp+=`, ADD CONSTRAINT ${schema.name}_primary_${n.name} PRIMARY KEY (${schema.column[index].name})`;
+				}else if(schema.column[index].unique){
+					temp+=`, ADD CONSTRAINT ${schema.name}_unique_${n.name} UNIQUE(${schema.column[index].unique.join(",")})`;
+				}else if(schema.column[index].foreign){
+					temp+=`, ADD CONSTRAINT ${schema.name}_foreign_${n.name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column})`;
+					if(typeof schema.column[index].foreign.ext =="string"){
+						temp +=` ${schema.column[index].foreign.ext}`;
+					}
 				}
 				ModelQuery({string:query,escape:false},function(result){
 					checkColumn(index+1);
 				});
 			}else{
-				var query = "select data_type from information_schema.columns where table_schema = '"+dbconfig.dbname+"' and table_name = '"+schema.name+"' and column_name = '"+schema.column[index].name+"'";
+				var query = `select * from information_schema.columns where table_schema = '${dbconfig.dbname}' and table_name = '${schema.name}' and column_name = '${schema.column[index].name}'`;
 				ModelQuery({string:query,escape:false},function(result){
-					if(typeof result.recordset[0].data_type =='string' && result.recordset[0].data_type.toLowerCase()==schema.column[index].type.toLowerCase()){
-						checkColumn(index+1);						
-					}else{
-						var query = "ALTER TABLE "+schema.name+" MODIFY COLUMN "+schema.column[index].name+" "+ schema.column[index].type;
-						if(schema.column[index].ext &&schema.column[index].ext !=""){
-							query+=" "+schema.column[index].ext;
-						}
-						ModelQuery({string:query,escape:false},function(result){
-							checkColumn(index+1);
-						});
+					if(result.error){
+						checkColumn(index+1);	
+						return;
 					}
+					var res = result.recordset[0];
+					var alter;
+					
+					if(res.DATA_TYPE.toLowerCase() != schema.column[index].type.toLowerCase()){
+						alter = `ALTER TABLE ${schema.name} MODIFY COLUMN ${schema.column[index].name} ${schema.column[index].type}`;
+					}
+					if(schema.column[index].len && schema.column[index].len > 0 && res.CHARACTER_MAXIMUM_LENGTH != schema.column[index].len){
+						alter = `ALTER TABLE ${schema.name} MODIFY COLUMN ${schema.column[index].name} ${schema.column[index].type}(${schema.column[index].len})`;
+					}
+					if(!alter){
+						checkColumn(index+1);	
+						return;
+					}
+					if(schema.column[index].ext &&schema.column[index].ext !=""){
+						alter+=` ${schema.column[index].ext}`;
+					}
+					console.log(alter);
+					ModelQuery({string:alter,escape:false},function(result){
+						checkColumn(index+1);
+					});
 				});				
 			}
 			
 		});		
 	}
 	function checkIndexed(index){
+		
 		if (index >= schema.column.length){
 			finished = true;
 			if (presetData){
@@ -106,36 +138,48 @@ function model(schema,dbconfig,presetData,callback){
 			}
 			return;
 		}
-		if(!schema.column[index].index && !schema.column[index].primary){
+		var alter;
+		var query = `SELECT * FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND Column_name=?`;
+		var escape = [dbconfig.database,schema.name,schema.column[index].name];
+		if(schema.column[index].index===true){
+			alter = `ALTER TABLE ${schema.name} ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name});`;
+			query +=" AND INDEX_NAME=?";
+			escape.push(`${schema.name}_index_${schema.column[index].name}`);
+		}else if(schema.column[index].primary===true ){
+			alter=`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_primary_${schema.column[index].name} PRIMARY KEY (${schema.column[index].name})`;
+			query +="AND INDEX_NAME=?";
+			escape.push(`PRIMARY`);
+		}else if(schema.column[index].unique){
+			alter=`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_unique_${schema.column[index].name} UNIQUE(${schema.column[index].unique.join(",")})`;
+			query +=" AND INDEX_NAME=?";
+			escape.push(`${schema.name}_unique_${schema.column[index].name}`);
+		}else if(schema.column[index].foreign ){
+			alter =`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_foreign_${schema.column[index].name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column}) `;
+			if(typeof schema.column[index].foreign.ext =="string"){
+				alter +=` ${schema.column[index].foreign.ext}`;
+			}
+			query +=" AND INDEX_NAME=?";
+			escape.push(`${schema.name}_foreign_${schema.column[index].name}`);
+		}
+		if(!alter){
 			checkIndexed(index+1);
 			return;
 		}
-		var query = "SELECT Column_name FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND Column_name=?";
-		var escape = [dbconfig.database,schema.name,schema.column[index].name];
 		ModelQuery({string:query,escape:escape},function(result){
-			if(result && result.recordset && result.recordset.length >0){
+			if(result.error){
 				checkIndexed(index+1);
 				return;
-			}else{
-				var INDEX_PART;
-				if(schema.column[index].index===true){
-					INDEX_PART =" ADD INDEX `"+schema.name+"_index_"+schema.column[index].name+"`" + " (`"+schema.column[index].name+"`)";
-				}
-				if(schema.column[index].primary===true){
-					INDEX_PART =" ADD PRIMARY KEY " + " (`"+schema.column[index].name+"`)";
-				}
-				if(typeof schema.column[index].foreign==="object"){
-					INDEX_PART +=" ADD FOREIGN KEY ("+schema.column[index].name+") REFERENCES "+schema.column[index].foreign.table + "(`"+schema.column[index].foreign.column+"`) ";
-					if(typeof schema.column[index].foreign.ext==="string"){
-						INDEX_PART+=schema.column[index].foreign.ext;
-					}
-				}
-				var query = "ALTER TABLE `"+schema.name+"` "+INDEX_PART+";";
-				ModelQuery({string:query,escape:false},function(result){
-					checkIndexed(index+1);
-					return;	
-				});
 			}
+			if(result.recordset.length >0){
+				checkIndexed(index+1);
+				return;
+			}
+			
+			ModelQuery({string:alter},function(result){
+				checkIndexed(index+1);
+				return;	
+			});
+			
 		});
 	}
 	function Find(condition,callback){
@@ -151,7 +195,7 @@ function model(schema,dbconfig,presetData,callback){
 		}
 
 		condition.string = condition.string || "1";
-		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string ;	
+		var query = `SELECT * FROM ${schema.name} WHERE ${condition.string}`;	
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result.recordset);}
 		});		
@@ -169,7 +213,7 @@ function model(schema,dbconfig,presetData,callback){
 		}
 
 		condition.string = condition.string || "1";
-		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT 1";
+		var query = `SELECT * FROM ${schema.name} WHERE ${condition.string} LIMIT 1`;
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if(result.error || !result.recordset || result.recordset.length<1){
 				if (callback && typeof(callback) == "function"){callback(false);}
@@ -192,7 +236,7 @@ function model(schema,dbconfig,presetData,callback){
 		
 		condition.string = condition.string || "1";
 		condition.top = condition.top || 1;
-		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.top ;
+		var query = `SELECT * FROM ${schema.name} WHERE ${condition.string} LIMIT ${condition.top}` ;
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result.recordset);}
 		});		
@@ -212,7 +256,7 @@ function model(schema,dbconfig,presetData,callback){
 		condition.page = condition.page || "0" ;
 		condition.max = condition.max || "10" ;
 
-		var query = "SELECT * FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.page+","+condition.max ;
+		var query = `SELECT * FROM ${schema.name} WHERE ${condition.string} LIMIT ${condition.page},${condition.max}` ;
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result.recordset);}
 		});		
@@ -229,7 +273,7 @@ function model(schema,dbconfig,presetData,callback){
 			condition={};
 		}
 		condition.string = condition.string || "1";
-		var query = "DELETE FROM "+schema.name+" WHERE "+condition.string ;	
+		var query = `DELETE FROM ${schema.name} WHERE ${condition.string}`;	
 
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
@@ -248,7 +292,7 @@ function model(schema,dbconfig,presetData,callback){
 		}
 		condition.string = condition.string || "1";
 		condition.top = condition.top || 1 ;
-		var query = "DELETE FROM "+schema.name+" WHERE "+condition.string+" LIMIT "+condition.top ;
+		var query = `DELETE FROM ${schema.name} WHERE ${condition.string} LIMIT ${condition.top}` ;
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});		
@@ -267,7 +311,30 @@ function model(schema,dbconfig,presetData,callback){
 
 		var query;
 		condition.string = condition.string || "1";
-		query = "SELECT IFNULL(COUNT(*),0) AS CNT FROM "+schema.name+" WHERE "+condition.string;	
+		query = `SELECT IFNULL(COUNT(*),0) AS CNT FROM ${schema.name} WHERE ${condition.string}`;	
+		ModelQuery({string:query,escape:condition.escape},function(result){
+			if (result.err){
+				if (callback && typeof(callback) == "function"){callback(0);}	
+				return;
+			}
+			if (callback && typeof(callback) == "function"){callback(result.recordset[0].CNT);}
+		});		
+	}
+	function Sum(col,condition,callback){			
+		if(!finished){
+			setTimeout(function(){
+				Count(condition,callback)
+			},100)
+			return;
+		}
+		if(typeof condition==="function"){
+			callback = condition;
+			condition={};
+		}
+
+		var query;
+		condition.string = condition.string || "1";
+		query = `SELECT IFNULL(SUM(${col}),0) AS SUM FROM ${schema.name} WHERE ${condition.string}`;	
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (result.err){
 				if (callback && typeof(callback) == "function"){callback(0);}	
@@ -287,7 +354,7 @@ function model(schema,dbconfig,presetData,callback){
 			callback({error:"option.string is not set"});
 			return;
 		}
-		var query = "UPDATE "+schema.name+" SET "+condition.string;	
+		var query = `UPDATE ${schema.name} SET ${condition.string}`;	
 		ModelQuery({string:query,escape:condition.escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});	
@@ -317,7 +384,7 @@ function model(schema,dbconfig,presetData,callback){
 		}
 
 		condition.string = condition.string || "1";
-		var query = "UPDATE " + schema.name + " SET " + updatequery + " WHERE " + condition.string;
+		var query = `UPDATE ${schema.name} SET ${updatequery} WHERE ${condition.string}`;
 		ModelQuery({string:query,escape:escapequery},function(result){
 			if(callback && typeof callback=='function'){
 				callback(result);
@@ -339,7 +406,7 @@ function model(schema,dbconfig,presetData,callback){
 		var insertquery2="(" + temp.join(",") + ")";
 		var escape =Object.values(data);
 
-		var query = "INSERT INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2;	
+		var query = `INSERT INTO ${schema.name} ${insertquery} VALUES ${insertquery2}`;	
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});
@@ -360,7 +427,7 @@ function model(schema,dbconfig,presetData,callback){
 		var insertquery2="(" + temp.join(",") + ")";
 		var escape =Object.values(data);
 	
-		var query = "INSERT IGNORE INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2;
+		var query = `INSERT IGNORE INTO ${schema.name} ${insertquery} VALUES ${insertquery2}`;
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});
@@ -387,7 +454,7 @@ function model(schema,dbconfig,presetData,callback){
 		}
 		insertDuplicate += temp.join(",") +';';
 		
-		var query = "INSERT INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2 + insertDuplicate;	
+		var query = `INSERT INTO ${schema.name} ${insertquery} VALUES ${insertquery2} ${insertDuplicate} `;	
 		
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
@@ -418,7 +485,7 @@ function model(schema,dbconfig,presetData,callback){
 			escape.push(...Object.values(data[i]))
 		}
 		
-		var query = "INSERT IGNORE INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2.join(",");
+		var query = `INSERT IGNORE INTO ${schema.name} ${insertquery} VALUES ${insertquery2.join(",")}`;
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});
@@ -455,7 +522,7 @@ function model(schema,dbconfig,presetData,callback){
 		}
 		insertDuplicate += temp.join(",") +';';
 
-		var query = "INSERT INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2.join(",") + insertDuplicate;
+		var query = `${schema.name} ${insertquery} VALUES ${insertquery2.join(",")} ${insertDuplicate}`;
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});
@@ -478,7 +545,7 @@ function model(schema,dbconfig,presetData,callback){
 				}
 				insertquery = insertquery.slice(0, - 1) + ")";
 				insertquery2 = insertquery2.slice(0, - 1) + ")";
-				query +="INSERT IGNORE INTO "+schema.name+" "+insertquery+" VALUES "+insertquery2;
+				query +=`INSERT IGNORE INTO ${schema.name} ${insertquery} VALUES ${insertquery2}`;
 				escape = escape.concat(escape);					
 				ModelQuery({string:query,escape:escape},function(result){
 					addData(i+1);
@@ -509,6 +576,7 @@ function model(schema,dbconfig,presetData,callback){
 		InsertMultiple:InsertMultiple,
 		InsertMultipleWithDuplicate:InsertMultipleWithDuplicate,
 		Count:Count,
+		Sum:Sum,
 		sqlDate:sqlDate,
 		sqlQuery:ModelQuery
 	}

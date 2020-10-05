@@ -30,18 +30,23 @@ function author(){
 			{
 				name:'id',
 				type:'VARCHAR',
-				ext:'(16)',
+				len:16,
 				primary:true,
 			},
 			{
 				name:'email',
 				type:'VARCHAR',
-				ext:'(255) UNIQUE'
+				len:255,
+				unique:['email']
 			},
 			{
 				name:'name',
 				type:'TEXT',
 				ext:''
+			},
+			{
+				name:'score',
+				type:'INT',
 			},
 			{
 				name:'posttime',
@@ -92,6 +97,7 @@ const table ={
             ext:,
             primary:,
             index:,
+			unique:,
             foreign:{
                 table:,
                 column:
@@ -106,9 +112,11 @@ const table ={
 - ```table.column``` : [array][required], list of column inside the table
 - ```table.column.name``` : [string][required], the name of column
 - ```table.column.type``` : [string][required], sql data type (ie: **TEXT**, **VARCHAR**, **INT**). Please refer to sql data types for all available option.
+- ```table.column.len``` : [number][optional], sql data size.
 - ```table.column.ext```:[string],[optional], sql extended option for data type, such as length, or unique index. Please refer to sql data types for all available option.
-- ```table.column.primary``` : [boolean][optional], Determines if column will have **PRIMARY KEY** index
 - ```table.column.index``` :[boolean][optional], Determines if column will have **INDEX KEY**
+- ```table.column.primary``` : [boolean][optional], Determines if column will have **PRIMARY KEY** index
+- ```table.column.unique``` :[array][optional], Determines if column will have **UNIQUE KEY**
 - ```table.column.foreign```:[object][optional],Determines if column **FOREIGN KEY**
 - ```table.column.foreign.table``` :[string][required], the table for **FOREIGN KEY**
 - ```table.column.foreign.column```:[string][required],the column for **FOREIGN KEY**.
@@ -371,6 +379,22 @@ authorModel.Count({string:"posttime<?",escape:["2019-01-01"]},(result)=>{
 is the same as executing query like this
 ```
 SELECT IFNULL(COUNT(*),0) FROM tbl_author WHERE posttime<'2019-01-01';
+```
+### Sum(column,[option],callback)
+Perform ```SELECT IFNULL(SUM(column),0) FROM ``` query for the table.  Option are:
+- option.column : [string][required], the column name,
+- option.string : [string][optional][default:"1"], the sql query after a ```WHERE``` clause , you can use ``?`` characters as placeholders for values you would like to have escaped,
+- option.escape : [array][optional], the value of the escaped string 
+
+performing 
+```
+authorModel.Sum("score",{string:"posttime<?",escape:["2019-01-01"]},(result)=>{
+    // result the number of record
+})
+```
+is the same as executing query like this
+```
+SELECT IFNULL(SUM(score),0) FROM tbl_author WHERE posttime<'2019-01-01';
 ```
 
 ## License
