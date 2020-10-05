@@ -80,6 +80,9 @@ function model(schema,dbconfig,presetData,callback){
 				if(schema.column[index].ext &&schema.column[index].ext !=""){
 					query+=` ${schema.column[index].ext}`; 
 				}
+				if(index -1 >=0){
+					query +=` AFTER ${schema.column[index-1].name}`;
+				}
 				if(schema.column[index].index===true){
 					temp+=`, ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name})`;
 				}else if(schema.column[index].primary===true){
