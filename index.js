@@ -80,8 +80,10 @@ function model(schema,dbconfig,presetData,callback){
 				if(schema.column[index].ext &&schema.column[index].ext !=""){
 					query+=` ${schema.column[index].ext}`; 
 				}
-				if(index -1 >=0){
+				if(index -1 >0){
 					query +=` AFTER ${schema.column[index-1].name}`;
+				}else if(index==0){
+					query +=` FIRST`;
 				}
 				if(schema.column[index].index===true){
 					query+=`, ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name})`;
