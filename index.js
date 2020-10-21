@@ -527,7 +527,7 @@ function model(schema,dbconfig,presetData,callback){
 		}
 		insertDuplicate += temp.join(",") +';';
 
-		var query = `${schema.name} ${insertquery} VALUES ${insertquery2.join(",")} ${insertDuplicate}`;
+		var query = `INSERT INTO ${schema.name} ${insertquery} VALUES ${insertquery2.join(",")} ${insertDuplicate}`;
 		ModelQuery({string:query,escape:escape},function(result){
 			if (callback && typeof(callback) == "function"){callback(result);}
 		});
