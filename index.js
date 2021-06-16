@@ -31,11 +31,11 @@ function model(schema,dbconfig,presetData,callback){
 				schema.column.forEach((n)=>{
 					var temp="";
 					if(n.index===true){
-						indexes.push(`INDEX ${schema.name}_index_${n.name} (${n.name})`);
+						indexes.push(`INDEX ${schema.name}_i_${n.name} (${n.name})`);
 					}else if(n.primary===true){
-						indexes.push(`CONSTRAINT ${schema.name}_primary_${n.name} PRIMARY KEY (${n.name})`);
+						indexes.push(`CONSTRAINT ${schema.name}_p_${n.name} PRIMARY KEY (${n.name})`);
 					}else if(n.unique){
-						indexes.push(`CONSTRAINT ${schema.name}_unique_${n.name} UNIQUE(${n.unique.join(",")})`);
+						indexes.push(`CONSTRAINT ${schema.name}_u_${n.name} UNIQUE(${n.unique.join(",")})`);
 					}
 				})
 				var query=`CREATE TABLE ${schema.name} (${columns.join(",")} `;
@@ -88,11 +88,11 @@ function model(schema,dbconfig,presetData,callback){
 				if(schema.column[index].index===true){
 					query+=`, ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name})`;
 				}else if(schema.column[index].primary===true){
-					query+=`, ADD CONSTRAINT ${schema.name}_primary_${n.name} PRIMARY KEY (${schema.column[index].name})`;
+					query+=`, ADD CONSTRAINT ${schema.name}_primary_${schema.column[index].name} PRIMARY KEY (${schema.column[index].name})`;
 				}else if(schema.column[index].unique){
-					query+=`, ADD CONSTRAINT ${schema.name}_unique_${n.name} UNIQUE(${schema.column[index].unique.join(",")})`;
+					query+=`, ADD CONSTRAINT ${schema.name}_unique_${schema.column[index].name} UNIQUE(${schema.column[index].unique.join(",")})`;
 				}else if(schema.column[index].foreign){
-					query+=`, ADD CONSTRAINT ${schema.name}_foreign_${n.name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column})`;
+					query+=`, ADD CONSTRAINT ${schema.name}_foreign_${schema.column[index].name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column})`;
 					if(typeof schema.column[index].foreign.ext =="string"){
 						query +=` ${schema.column[index].foreign.ext}`;
 					}
@@ -147,24 +147,24 @@ function model(schema,dbconfig,presetData,callback){
 		var query = `SELECT * FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND Column_name=?`;
 		var escape = [dbconfig.database,schema.name,schema.column[index].name];
 		if(schema.column[index].index===true){
-			alter = `ALTER TABLE ${schema.name} ADD INDEX ${schema.name}_index_${schema.column[index].name} (${schema.column[index].name});`;
+			alter = `ALTER TABLE ${schema.name} ADD INDEX ${schema.name}_i_${schema.column[index].name} (${schema.column[index].name});`;
 			query +=" AND INDEX_NAME=?";
-			escape.push(`${schema.name}_index_${schema.column[index].name}`);
+			escape.push(`${schema.name}_i_${schema.column[index].name}`);
 		}else if(schema.column[index].primary===true ){
-			alter=`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_primary_${schema.column[index].name} PRIMARY KEY (${schema.column[index].name})`;
+			alter=`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_p_${schema.column[index].name} PRIMARY KEY (${schema.column[index].name})`;
 			query +="AND INDEX_NAME=?";
 			escape.push(`PRIMARY`);
 		}else if(schema.column[index].unique){
-			alter=`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_unique_${schema.column[index].name} UNIQUE(${schema.column[index].unique.join(",")})`;
+			alter=`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_u_${schema.column[index].name} UNIQUE(${schema.column[index].unique.join(",")})`;
 			query +=" AND INDEX_NAME=?";
-			escape.push(`${schema.name}_unique_${schema.column[index].name}`);
+			escape.push(`${schema.name}_u_${schema.column[index].name}`);
 		}else if(schema.column[index].foreign ){
-			alter =`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_foreign_${schema.column[index].name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column}) `;
+			alter =`ALTER TABLE ${schema.name} ADD CONSTRAINT ${schema.name}_f_${schema.column[index].name} FOREIGN KEY (${schema.column[index].name}) REFERENCES ${schema.column[index].foreign.table}(${schema.column[index].foreign.column}) `;
 			if(typeof schema.column[index].foreign.ext =="string"){
 				alter +=` ${schema.column[index].foreign.ext}`;
 			}
 			query +=" AND INDEX_NAME=?";
-			escape.push(`${schema.name}_foreign_${schema.column[index].name}`);
+			escape.push(`${schema.name}_f_${schema.column[index].name}`);
 		}
 		if(!alter){
 			checkIndexed(index+1);
